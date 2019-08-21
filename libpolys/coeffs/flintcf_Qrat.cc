@@ -31,20 +31,20 @@ typedef fmpz *fmpz_ptr;
 /*2
 * extracts a long integer from s, returns the rest
 */
-static char * nlEatLong(char *s, mpz_ptr i)
+static char * nlEatLong(char *s, fmpz_ptr i)
 {
   const char * start = s;
 
   while (*s >= '0' && *s <= '9') s++;
   if (*s == '\0')
   {
-    mpz_set_str(i, start, 10);
+    fmpz_set_str(i, start, 10);
   }
   else
   {
     char c = *s;
     *s = '\0';
-    mpz_set_str(i, start, 10);
+    fmpz_set_str(i, start, 10);
     *s = c;
   }
   return s;
@@ -790,9 +790,11 @@ static const char* Read(const char * st, number * a, const coeffs c)
 {
   // we only read "monomials" (i.e. [-][digits][parameter]),
   // everything else (+,*,^,()) is left to the singular interpreter
+  long int j;
   char *s = (char *) st;
-  *a = (number) omAlloc(sizeof(fmpq_poly_t));
-  fmpq_poly_init((fmpq_poly_ptr)(*a));
+  const fmpq_ctx_ptr ctx = (fmpq_ctx_ptr) c->data->ctx;
+  *a = (number) omAlloc(sizeof(fmpq_rat_struct));
+  fmpq_rat_init((fmpq_rat_ptr)(*a), ctx);
   BOOLEAN neg = FALSE;
   if (*s=='-')
   {
@@ -801,35 +803,44 @@ static const char* Read(const char * st, number * a, const coeffs c)
   }
   if (isdigit(*s))
   {
-    mpz_t z;
-    mpz_init(z);
-    s=nlEatLong((char *) s, z);
-    fmpq_poly_set_mpz((fmpq_poly_ptr)(*a),z);
+    fmpz_t z;
+    fmpz_init(z);
+    s = nlEatLong((char *) s, z);
+    fmpq_mpoly_set_fmpz((fmpq_rat_ptr)(*a)->num, z, ctx);
+    fmpq_mpoly_set_ui((fmpq_rat_ptr)(*a)->den, 1, ctx);
     if (*s == '/')
     {
       s++;
-      s=nlEatLong((char *) s, z);
-      fmpq_poly_scalar_div_mpz((fmpq_poly_ptr)(*a),(fmpq_poly_ptr)(*a),z);
+      s = nlEatLong((char *) s, z);
+      fmpq_mpoly_scalar_div_fmpz((fmpq_rat_ptr)(*a)->num,
+                                    (fmpq_rat_ptr)(*a)->num, z, ctx);
     }
-    mpz_clear(z);
+    fmpz_clear(z);
   }
-  else if (strncmp(s, c->pParameterNames[0], strlen(c->pParameterNames[0])) == 0)
+  else
   {
-    fmpq_poly_set_coeff_si((fmpq_poly_ptr)(*a), 1, 1);
-    s += strlen(c->pParameterNames[0]);
-    if(isdigit(*s))
+    for (j = 0; j < nvars; j++)
     {
-      int i = 1;
-      s=nEati(s, &i, 0);
-      if (i != 1)
+      if (strncmp(s, c->pParameterNames[j],
+                                  strlen(c->pParameterNames[j])) == 0)
       {
-        fmpq_poly_set_coeff_si((fmpq_poly_ptr)(*a), 1, 0);
-        fmpq_poly_set_coeff_si((fmpq_poly_ptr)(*a), i, 1);
+        fmpq_poly_gen((fmpq_rat_ptr)(*a)->num, j, ctx);
+        s += strlen(c->pParameterNames[j]);
+        if (isdigit(*s))
+        {
+          int i = 1;
+          s = nEati(s, &i, 0);
+          if (i != 1)
+          {
+            fmpq_mpoly_pow_si((fmpq_rat_ptr)(*a)->num,
+                         (fmpq_rat_ptr)(*a)->num, (long int) i, ctx);
+          }
+        }
       }
     }
   }
   if (neg)
-    fmpq_poly_neg((fmpq_poly_ptr)(*a), (fmpq_poly_ptr)(*a));
+    fmpq_mpoly_neg((fmpq_poly_ptr)(*a), (fmpq_poly_ptr)(*a), ctx);
   return s;
 }
 
