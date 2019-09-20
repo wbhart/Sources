@@ -97,7 +97,19 @@ static void fmpq_rat_canonicalise(fmpq_rat_ptr a, const coeffs r)
 
 static BOOLEAN CoeffIsEqual(const coeffs c, n_coeffType n, void * parameter)
 {
-  return (c->type == n);
+  if (c->type == n)
+  {
+    const fmpq_ctx_ptr ctx = (fmpq_ctx_ptr) ((data_ptr)c->data)->ctx;
+    const QaInfo *par=(QaInfo*)parameter;
+    if (par->N != c->iNumberOfParameters) return FALSE;
+    // compare parameter names
+    for(int i=0;i<par->N;i++)
+    {
+      if (strcmp(par->names[i],c->pParameterNames[i])!=0) return FALSE;
+    }
+    return TRUE;
+  }
+  return FALSE;
 }
 
 static number Mult(number a, number b, const coeffs c)
@@ -142,7 +154,7 @@ static number Mult(number a, number b, const coeffs c)
       fmpq_mpoly_mul(res->num, res->num, x->num, ctx);
       fmpq_mpoly_div(res->den, x->den, gd, ctx);
     }
-    fmpq_mpoly_clear(gd, ctx);							
+    fmpq_mpoly_clear(gd, ctx);
   } else /* general case */
   {
     fmpq_mpoly_t g1, g2;
@@ -199,7 +211,7 @@ static number Sub(number a, number b, const coeffs c)
         fmpq_mpoly_div(res->num, res->num, gd, ctx);
       }
       fmpq_mpoly_clear(gd, ctx);
-    } 
+    }
   } else if (fmpq_mpoly_is_one(x->den, ctx)) /* first denominator 1 */
   {
     fmpq_mpoly_mul(res->num, x->num, y->den, ctx);
@@ -331,7 +343,7 @@ static number Div(number a, number b, const coeffs c)
   if (fmpq_mpoly_is_zero(y->num, ctx))
   {
     WerrorS(nDivBy0);
-    return NULL; 
+    return NULL;
   }
   fmpq_rat_init(res, c);
   if (fmpq_mpoly_equal(x->den, y->num, ctx)) /* denominators equal */
@@ -597,7 +609,7 @@ static void WriteLong(number a, const coeffs c)
                        fmpz_mpoly_get_coeff_fmpz_ref(zden, dmax_i, ctx->zctx)) > 0)
     {
       fmpz_mul(t, fmpq_numref(x->num->content),
-                  fmpz_mpoly_get_coeff_fmpz_ref(znum, nmax_i, ctx->zctx));       
+                  fmpz_mpoly_get_coeff_fmpz_ref(znum, nmax_i, ctx->zctx));
       max_digits = fmpz_sizeinbase(t, 10);
     } else
     {
@@ -622,14 +634,14 @@ static void WriteLong(number a, const coeffs c)
         if (!fmpz_is_one(t))
         {
           fmpz_get_str(s, 10, t);
-	  StringAppendS(s);
+          StringAppendS(s);
         } else
         {
           need_times = FALSE;
         }
         for (j = 0; j < nvars; j++)
         {
-	  k = fmpq_mpoly_get_term_var_exp_ui(x->num, i, j, ctx);
+          k = fmpq_mpoly_get_term_var_exp_ui(x->num, i, j, ctx);
           if (k != 0)
           {
             if (need_times)
@@ -679,7 +691,7 @@ static void WriteLong(number a, const coeffs c)
             need_times = TRUE;
           }
         }
-      }      
+      }
       if (!den_is_const)
         StringAppendS(")");
     }
@@ -727,7 +739,7 @@ static void WriteShort(number a, const coeffs c)
                        fmpz_mpoly_get_coeff_fmpz_ref(zden, dmax_i, ctx->zctx)) > 0)
     {
       fmpz_mul(t, fmpq_numref(x->num->content),
-                  fmpz_mpoly_get_coeff_fmpz_ref(znum, nmax_i, ctx->zctx));       
+                  fmpz_mpoly_get_coeff_fmpz_ref(znum, nmax_i, ctx->zctx));
       max_digits = fmpz_sizeinbase(t, 10);
     } else
     {
@@ -751,7 +763,7 @@ static void WriteShort(number a, const coeffs c)
         if (!fmpz_is_one(t))
         {
           fmpz_get_str(s, 10, t);
-	  StringAppendS(s);
+          StringAppendS(s);
         }
         for (j = 0; j < nvars; j++)
         {
@@ -795,7 +807,7 @@ static void WriteShort(number a, const coeffs c)
               StringAppend("%s", c->pParameterNames[j]);
           }
         }
-      }      
+      }
       if (!den_is_const)
         StringAppendS(")");
     }
@@ -964,11 +976,13 @@ static number Gcd(number a, number b, const coeffs c)
 static number ExtGcd(number a, number b, number *s, number *t, const coeffs c)
 {
   WerrorS("not a Euclidean ring: ExtGcd");
+  return NULL;
 }
 
 static number Lcm(number a, number b, const coeffs c)
 {
   WerrorS("not yet: Lcm");
+  return NULL;
 }
 
 static void Delete(number * a, const coeffs c)
@@ -1020,20 +1034,22 @@ static number Init_bigint(number i, const coeffs dummy, const coeffs dst)
 static number Farey(number p, number n, const coeffs c)
 {
   WerrorS("not yet: Farey");
+  return NULL;
 }
 
 static number ChineseRemainder(number *x, number *q, int rl,
                     BOOLEAN sym, CFArray &inv_cache, const coeffs c)
 {
   WerrorS("not yet: ChineseRemainder");
+  return NULL;
 }
 
 static int ParDeg(number a, const coeffs c)
 {
     const fmpq_rat_ptr x = (fmpq_rat_ptr) a;
     const fmpq_ctx_ptr ctx = (fmpq_ctx_ptr) ((data_ptr)c->data)->ctx;
-    return (int) (fmpq_mpoly_total_degree_si(x->num, ctx) - 
-		  fmpq_mpoly_total_degree_si(x->den, ctx));
+    return (int) (fmpq_mpoly_total_degree_si(x->num, ctx) -
+                  fmpq_mpoly_total_degree_si(x->den, ctx));
 }
 
 static number Parameter(const int i, const coeffs c)
@@ -1098,6 +1114,7 @@ static number ReadFd(const ssiInfo *d, const coeffs c)
   mpq_clear(m);
   return (number)aa;
 */
+  return NULL;
 }
 
 // cfClearContent
@@ -1107,26 +1124,32 @@ static number ReadFd(const ssiInfo *d, const coeffs c)
 static number ConvFactoryNSingN(const CanonicalForm n, const coeffs c)
 {
   WerrorS("not yet: ConvFactoryNSingN");
+  return NULL;
 }
 
 static CanonicalForm ConvSingNFactoryN(number n, BOOLEAN setChar, const coeffs c)
 {
   WerrorS("not yet: ConvSingNFactoryN");
+  return CanonicalForm(0);
 }
 
 char * QratCoeffName(const coeffs c)
 {
-  STATIC_VAR char CoeffName_flint_Qrat[20];
-  sprintf(CoeffName_flint_Qrat, "flint:QQ[%s]", c->pParameterNames[0]);
+  STATIC_VAR char CoeffName_flint_Qrat[200];
+  sprintf(CoeffName_flint_Qrat, "flintQQ(%s",c->pParameterNames[0]);
+  for(int i=1; i<c->iNumberOfParameters;i++)
+  {
+    strcat(CoeffName_flint_Qrat,",");
+    strcat(CoeffName_flint_Qrat,c->pParameterNames[i]);
+  }
+  strcat(CoeffName_flint_Qrat,")");
   return (char*) CoeffName_flint_Qrat;
 
 }
 
 static char* CoeffString(const coeffs c)
 {
-  char *buf = (char*) omAlloc(12 + strlen(c->pParameterNames[0]));
-  sprintf(buf, "flintQ(\"%s\")", c->pParameterNames[0]);
-  return buf;
+  return omStrDup(QratCoeffName(c));
 }
 
 static void CoeffWrite(const coeffs c, BOOLEAN details)
@@ -1136,19 +1159,47 @@ static void CoeffWrite(const coeffs c, BOOLEAN details)
 
 coeffs flintQratInitCfByName(char *s, n_coeffType n)
 {
-  const char start[] = "flint:QQ[";
+  const char start[] = "flintQ(";
   const int start_len = strlen(start);
   if (strncmp(s, start, start_len) == 0)
   {
     s += start_len;
-    char st[10];
-    int l = sscanf(s, "%s", st);
-    if (l == 1)
+    // count ,
+    char *p=s;
+    int N=0;
+    loop
     {
-      while (st[strlen(st) - 1] == ']')
-        st[strlen(st) - 1] = '\0';
-      return nInitChar(n, (void*) st);
+      while((*p!=',')&&(*p!=')')&&(*p!='\0')) p++;
+      if (*p==',')       { p++; N++;}
+      else if (*p==')')  { p++; N++; break;}
+      else if (*p=='\0') { break;}
     }
+    // get names
+    char *names[N];
+    int i=0;
+    p=s;
+    loop
+    {
+      while((*p!=',')&&(*p!=')')&&(*p!='\0')) p++;
+      if ((*p==',')||(*p=')'))
+      {
+        char c=*p;
+        *p='\0';
+        names[i]=omStrDup(s);
+        *p=c;
+        i++;
+        p++;
+        s=p;
+        if (c==')') break;
+      }
+      if (*p=='\0') break;
+    }
+    QaInfo pp;
+    pp.N=N;
+    pp.names=names;
+    coeffs cf=nInitChar(n,&pp);
+    for(i=0;i<N;i++) omFree(names[i]);
+    return cf;
   }
   return NULL;
 }
@@ -1168,7 +1219,7 @@ static void KillChar(coeffs cf)
 
 BOOLEAN flintQrat_InitChar(coeffs cf, void * infoStruct)
 {
-  char *pp=(char*)infoStruct;
+  QaInfo *pp=(QaInfo*)infoStruct;
   cf->cfCoeffString  = CoeffString;
   cf->cfCoeffName    = QratCoeffName;
   cf->cfCoeffWrite   = CoeffWrite;
@@ -1224,21 +1275,24 @@ BOOLEAN flintQrat_InitChar(coeffs cf, void * infoStruct)
   cf->cfParameter    = Parameter;
   //  cf->cfClearContent = ClearContent;
   //  cf->cfClearDenominators = ClearDenominators;
-  cf->convFactoryNSingN = ConvFactoryNSingN;
-  cf->convSingNFactoryN = ConvSingNFactoryN;
+  //cf->convFactoryNSingN = ConvFactoryNSingN;
+  //cf->convSingNFactoryN = ConvSingNFactoryN;
   cf->cfWriteFd      = WriteFd;
   cf->cfReadFd       = ReadFd;
 #ifdef LDEBUG
   cf->cfDBTest       = DBTest;
 #endif
 
-  cf->iNumberOfParameters = 1;
-  char **pn = (char**) omAlloc0(sizeof(char*));
-  pn[0] = omStrDup(pp);
+  cf->iNumberOfParameters = pp->N;
+  char **pn = (char**) omAlloc0(pp->N*sizeof(char*));
+  for(int i=0;i<pp->N;i++)
+  {
+    pn[i] = omStrDup(pp->names[i]);
+  }
   cf->pParameterNames = (const char **) pn;
-  cf->has_simple_Inverse = FALSE;
+  cf->has_simple_Inverse = TRUE;
   cf->has_simple_Alloc = FALSE;
-  cf->is_field = FALSE;
+  cf->is_field = TRUE;
 
   return FALSE;
 }

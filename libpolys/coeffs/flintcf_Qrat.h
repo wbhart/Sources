@@ -14,6 +14,12 @@
 
 typedef struct
 {
+  char **names;
+  int N;
+} QaInfo;
+
+typedef struct
+{
    fmpq_mpoly_t num;
    fmpq_mpoly_t den;
 } fmpq_rat_struct;
