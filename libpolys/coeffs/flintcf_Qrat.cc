@@ -9,9 +9,6 @@
 #include "misc/auxiliary.h"
 
 #ifdef HAVE_FLINT
-
-#include <flint/flint.h>
-#include <flint/fmpq_mpoly.h>
 #include "factory/factory.h"
 
 #include "coeffs/coeffs.h"
@@ -29,12 +26,6 @@ typedef fmpq_rat_data_struct *data_ptr;
 /******************************************************************************
 * Helper functions
 ******************************************************************************/
-
-/* This is a temporary hack until this function exists. */
-fmpz * fmpz_mpoly_get_coeff_fmpz_ref(fmpz_mpoly_t pol, slong i, fmpz_mpoly_ctx_t ctx)
-{
-   return (fmpz *) NULL;
-}
 
 /*2
 * extracts a long integer from s, returns the rest
@@ -123,7 +114,8 @@ static number Mult(number a, number b, const coeffs c)
   {
     fmpq_mpoly_mul(res->num, x->num, y->num, ctx);
     fmpq_mpoly_mul(res->den, x->den, y->den, ctx);
-  } else if (fmpq_mpoly_is_one(x->den, ctx)) /* first denominator 1 */
+  }
+  else if (fmpq_mpoly_is_one(x->den, ctx)) /* first denominator 1 */
   {
     fmpq_mpoly_t gd;
     fmpq_mpoly_init(gd, ctx);
@@ -132,30 +124,34 @@ static number Mult(number a, number b, const coeffs c)
     {
       fmpq_mpoly_mul(res->num, x->num, y->num, ctx);
       fmpq_mpoly_set(res->den, y->den, ctx);
-    } else
+    }
+    else
     {
       fmpq_mpoly_div(res->num, x->num, gd, ctx);
       fmpq_mpoly_mul(res->num, res->num, y->num, ctx);
       fmpq_mpoly_div(res->den, y->den, gd, ctx);
     }
     fmpq_mpoly_clear(gd, ctx);
-  } else if (fmpq_mpoly_is_one(y->den, ctx)) /* second denominator 1 */
+  }
+  else if (fmpq_mpoly_is_one(y->den, ctx)) /* second denominator 1 */
   {
     fmpq_mpoly_t gd;
     fmpq_mpoly_init(gd, ctx);
     fmpq_mpoly_gcd(gd, y->num, x->den, ctx);
     if (fmpq_mpoly_is_one(gd, ctx))
     {
-      fmpq_mpoly_mul(res->num, y->num, x->num, ctx);
+      fmpq_mpoly_mul(res->num, x->num, y->num, ctx);
       fmpq_mpoly_set(res->den, x->den, ctx);
-    } else
+    }
+    else
     {
       fmpq_mpoly_div(res->num, y->num, gd, ctx);
       fmpq_mpoly_mul(res->num, res->num, x->num, ctx);
       fmpq_mpoly_div(res->den, x->den, gd, ctx);
     }
     fmpq_mpoly_clear(gd, ctx);
-  } else /* general case */
+  }
+  else /* general case */
   {
     fmpq_mpoly_t g1, g2;
     fmpq_mpoly_ptr n1, n2, d1, d2;
@@ -164,6 +160,7 @@ static number Mult(number a, number b, const coeffs c)
     fmpq_mpoly_gcd(g1, x->num, y->den, ctx);
     fmpq_mpoly_gcd(g2, y->num, x->den, ctx);
     n1 = x->num; d2 = y->den;
+    d1 = x->den; n2 = y->num;
     if (!fmpq_mpoly_is_one(g1, ctx))
     {
       fmpq_mpoly_div(res->num, x->num, g1, ctx);
@@ -197,7 +194,8 @@ static number Sub(number a, number b, const coeffs c)
     if (fmpq_mpoly_is_one(x->den, ctx))
     {
       fmpq_mpoly_set(res->den, x->den, ctx);
-    } else
+    }
+    else
     {
       fmpq_mpoly_t gd;
       fmpq_mpoly_init(gd, ctx);
@@ -205,24 +203,28 @@ static number Sub(number a, number b, const coeffs c)
       if (fmpq_mpoly_is_one(gd, ctx))
       {
         fmpq_mpoly_set(res->den, x->den, ctx);
-      } else
+      }
+      else
       {
         fmpq_mpoly_div(res->den, x->den, gd, ctx);
         fmpq_mpoly_div(res->num, res->num, gd, ctx);
       }
       fmpq_mpoly_clear(gd, ctx);
     }
-  } else if (fmpq_mpoly_is_one(x->den, ctx)) /* first denominator 1 */
+  }
+  else if (fmpq_mpoly_is_one(x->den, ctx)) /* first denominator 1 */
   {
     fmpq_mpoly_mul(res->num, x->num, y->den, ctx);
     fmpq_mpoly_sub(res->num, res->num, y->num, ctx);
     fmpq_mpoly_set(res->den, y->den, ctx);
-  } else if (fmpq_mpoly_is_one(y->den, ctx)) /* second denominator 1 */
+  }
+  else if (fmpq_mpoly_is_one(y->den, ctx)) /* second denominator 1 */
   {
     fmpq_mpoly_mul(res->num, y->num, x->den, ctx);
     fmpq_mpoly_sub(res->num, x->num, res->num, ctx);
     fmpq_mpoly_set(res->den, x->den, ctx);
-  } else /* general case */
+  }
+  else /* general case */
   {
     fmpq_mpoly_t gd;
     fmpq_mpoly_init(gd, ctx);
@@ -233,7 +235,8 @@ static number Sub(number a, number b, const coeffs c)
       fmpq_mpoly_mul(gd, y->num, x->den, ctx);
       fmpq_mpoly_sub(res->num, res->num, gd, ctx);
       fmpq_mpoly_mul(res->den, x->den, y->den, ctx);
-    } else
+    }
+    else
     {
       fmpq_mpoly_t q2;
       fmpq_mpoly_init(q2, ctx);
@@ -246,7 +249,8 @@ static number Sub(number a, number b, const coeffs c)
       if (fmpq_mpoly_is_one(res->den, ctx))
       {
         fmpq_mpoly_mul(res->den, q2, x->den, ctx);
-      } else
+      }
+      else
       {
         fmpq_mpoly_div(res->num, res->num, res->den, ctx);
         fmpq_mpoly_div(gd, x->den, res->den, ctx);
@@ -272,7 +276,8 @@ static number Add(number a, number b, const coeffs c)
     if (fmpq_mpoly_is_one(x->den, ctx))
     {
       fmpq_mpoly_set(res->den, x->den, ctx);
-    } else
+    }
+    else
     {
       fmpq_mpoly_t gd;
       fmpq_mpoly_init(gd, ctx);
@@ -280,24 +285,28 @@ static number Add(number a, number b, const coeffs c)
       if (fmpq_mpoly_is_one(gd, ctx))
       {
         fmpq_mpoly_set(res->den, x->den, ctx);
-      } else
+      }
+      else
       {
         fmpq_mpoly_div(res->den, x->den, gd, ctx);
         fmpq_mpoly_div(res->num, res->num, gd, ctx);
       }
       fmpq_mpoly_clear(gd, ctx);
     }
-  } else if (fmpq_mpoly_is_one(x->den, ctx)) /* first denominator 1 */
+  }
+  else if (fmpq_mpoly_is_one(x->den, ctx)) /* first denominator 1 */
   {
     fmpq_mpoly_mul(res->num, x->num, y->den, ctx);
     fmpq_mpoly_add(res->num, res->num, y->num, ctx);
     fmpq_mpoly_set(res->den, y->den, ctx);
-  } else if (fmpq_mpoly_is_one(y->den, ctx)) /* second denominator 1 */
+  }
+  else if (fmpq_mpoly_is_one(y->den, ctx)) /* second denominator 1 */
   {
     fmpq_mpoly_mul(res->num, y->num, x->den, ctx);
     fmpq_mpoly_add(res->num, x->num, res->num, ctx);
     fmpq_mpoly_set(res->den, x->den, ctx);
-  } else /* general case */
+  }
+  else /* general case */
   {
     fmpq_mpoly_t gd;
     fmpq_mpoly_init(gd, ctx);
@@ -308,7 +317,8 @@ static number Add(number a, number b, const coeffs c)
       fmpq_mpoly_mul(gd, y->num, x->den, ctx);
       fmpq_mpoly_add(res->num, res->num, gd, ctx);
       fmpq_mpoly_mul(res->den, x->den, y->den, ctx);
-    } else
+    }
+    else
     {
       fmpq_mpoly_t q2;
       fmpq_mpoly_init(q2, ctx);
@@ -321,7 +331,8 @@ static number Add(number a, number b, const coeffs c)
       if (fmpq_mpoly_is_one(res->den, ctx))
       {
         fmpq_mpoly_mul(res->den, q2, x->den, ctx);
-      } else
+      }
+      else
       {
         fmpq_mpoly_div(res->num, res->num, res->den, ctx);
         fmpq_mpoly_div(gd, x->den, res->den, ctx);
@@ -336,7 +347,6 @@ static number Add(number a, number b, const coeffs c)
 
 static number Div(number a, number b, const coeffs c)
 {
-  fmpq_rat_ptr res = (fmpq_rat_ptr) omAlloc(sizeof(fmpq_rat_struct));
   const fmpq_rat_ptr x = (fmpq_rat_ptr) a;
   const fmpq_rat_ptr y = (fmpq_rat_ptr) b;
   const fmpq_ctx_ptr ctx = (fmpq_ctx_ptr) ((data_ptr)c->data)->ctx;
@@ -345,12 +355,14 @@ static number Div(number a, number b, const coeffs c)
     WerrorS(nDivBy0);
     return NULL;
   }
+  fmpq_rat_ptr res = (fmpq_rat_ptr) omAlloc(sizeof(fmpq_rat_struct));
   fmpq_rat_init(res, c);
   if (fmpq_mpoly_equal(x->den, y->num, ctx)) /* denominators equal */
   {
     fmpq_mpoly_mul(res->num, x->num, y->den, ctx);
     fmpq_mpoly_mul(res->den, x->den, y->num, ctx);
-  } else if (fmpq_mpoly_is_one(x->den, ctx)) /* first denominator 1 */
+  }
+  else if (fmpq_mpoly_is_one(x->den, ctx)) /* first denominator 1 */
   {
     fmpq_mpoly_t gd;
     fmpq_mpoly_init(gd, ctx);
@@ -359,14 +371,16 @@ static number Div(number a, number b, const coeffs c)
     {
       fmpq_mpoly_mul(res->num, x->num, y->den, ctx);
       fmpq_mpoly_set(res->den, y->num, ctx);
-    } else
+    }
+    else
     {
       fmpq_mpoly_div(res->num, x->num, gd, ctx);
       fmpq_mpoly_mul(res->num, res->num, y->den, ctx);
       fmpq_mpoly_div(res->den, y->num, gd, ctx);
     }
     fmpq_mpoly_clear(gd, ctx);
-  } else if (fmpq_mpoly_is_one(y->num, ctx)) /* second denominator 1 */
+  }
+  else if (fmpq_mpoly_is_one(y->num, ctx)) /* second denominator 1 */
   {
     fmpq_mpoly_t gd;
     fmpq_mpoly_init(gd, ctx);
@@ -375,14 +389,16 @@ static number Div(number a, number b, const coeffs c)
     {
       fmpq_mpoly_mul(res->num, y->den, x->num, ctx);
       fmpq_mpoly_set(res->den, x->den, ctx);
-    } else
+    }
+    else
     {
       fmpq_mpoly_div(res->num, y->den, gd, ctx);
       fmpq_mpoly_mul(res->num, res->num, x->num, ctx);
       fmpq_mpoly_div(res->den, x->den, gd, ctx);
     }
     fmpq_mpoly_clear(gd, ctx);
-  } else /* general case */
+  }
+  else /* general case */
   {
     fmpq_mpoly_t g1, g2;
     fmpq_mpoly_ptr n1, n2, d1, d2;
@@ -391,6 +407,7 @@ static number Div(number a, number b, const coeffs c)
     fmpq_mpoly_gcd(g1, x->num, y->num, ctx);
     fmpq_mpoly_gcd(g2, y->den, x->den, ctx);
     n1 = x->num; d2 = y->num;
+    d1 = x->den; n2 = y->den;
     if (!fmpq_mpoly_is_one(g1, ctx))
     {
       fmpq_mpoly_div(res->num, x->num, g1, ctx);
@@ -521,7 +538,8 @@ static number Invers(number a, const coeffs c)
   {
     WerrorS(nDivBy0);
     return NULL;
-  } else
+  }
+  else
   {
     fmpq_rat_ptr res = (fmpq_rat_ptr) omAlloc(sizeof(fmpq_rat_struct));
     fmpq_rat_init(res, c);
@@ -552,6 +570,7 @@ static number Copy(number a, const coeffs c)
 
 static BOOLEAN IsOne(number a, const coeffs c)
 {
+  if (a==NULL) return FALSE;
   const fmpq_rat_ptr x = (fmpq_rat_ptr) a;
   const fmpq_ctx_ptr ctx = (fmpq_ctx_ptr) ((data_ptr)c->data)->ctx;
   if (!fmpq_mpoly_is_fmpq(x->num, ctx))
@@ -570,10 +589,14 @@ static BOOLEAN IsZero(number a, const coeffs c)
 
 static void WriteLong(number a, const coeffs c)
 {
+  if (a==NULL)
+  {
+    StringAppendS("o");
+    return;
+  }
   const fmpq_rat_ptr x = (fmpq_rat_ptr) a;
   const fmpq_ctx_ptr ctx = (fmpq_ctx_ptr) ((data_ptr)c->data)->ctx;
   fmpz_t t;
-  char *s;
   long int i, j, k, nmax_i, dmax_i, max_digits;
   fmpq_rat_canonicalise(x, c);
   if (fmpq_mpoly_is_zero(x->num, ctx))
@@ -583,41 +606,42 @@ static void WriteLong(number a, const coeffs c)
     BOOLEAN num_is_const = fmpq_mpoly_is_fmpq(x->num, ctx);
     BOOLEAN den_is_const = fmpq_mpoly_is_fmpq(x->den, ctx);
     BOOLEAN need_times;
-    fmpz_mpoly_struct * znum = x->num->zpoly;
-    fmpz_mpoly_struct * zden = x->den->zpoly;
+    fmpq_mpoly_struct * znum = x->num;
+    fmpq_mpoly_struct * zden = x->den;
     slong nvars = fmpq_mpoly_ctx_nvars(ctx);
     fmpz_init(t);
     nmax_i = 0;
     dmax_i = 0;
-    for (i = 1; i < fmpz_mpoly_length(znum, ctx->zctx); i++)
+    for (i = 1; i < fmpq_mpoly_length(znum, ctx); i++)
     {
-      if (fmpz_cmpabs(fmpz_mpoly_get_coeff_fmpz_ref(znum, i, ctx->zctx),
-                      fmpz_mpoly_get_coeff_fmpz_ref(znum, nmax_i, ctx->zctx)) > 0)
+      if (fmpz_cmpabs(fmpq_mpoly_zpoly_term_coeff_ref(znum, i, ctx),
+                      fmpq_mpoly_zpoly_term_coeff_ref(znum, nmax_i, ctx)) > 0)
       {
          nmax_i = i;
       }
     }
-    for (i = 1; i < fmpz_mpoly_length(zden, ctx->zctx); i++)
+    for (i = 1; i < fmpq_mpoly_length(zden, ctx); i++)
     {
-      if (fmpz_cmpabs(fmpz_mpoly_get_coeff_fmpz_ref(zden, i, ctx->zctx),
-                      fmpz_mpoly_get_coeff_fmpz_ref(zden, dmax_i, ctx->zctx)) > 0)
+      if (fmpz_cmpabs(fmpq_mpoly_zpoly_term_coeff_ref(zden, i, ctx),
+                      fmpq_mpoly_zpoly_term_coeff_ref(zden, dmax_i, ctx)) > 0)
       {
         dmax_i = i;
       }
     }
-    if (fmpz_cmpabs(fmpz_mpoly_get_coeff_fmpz_ref(znum, nmax_i, ctx->zctx),
-                       fmpz_mpoly_get_coeff_fmpz_ref(zden, dmax_i, ctx->zctx)) > 0)
+    if (fmpz_cmpabs(fmpq_mpoly_zpoly_term_coeff_ref(znum, nmax_i, ctx),
+                       fmpq_mpoly_zpoly_term_coeff_ref(zden, dmax_i, ctx)) > 0)
     {
       fmpz_mul(t, fmpq_numref(x->num->content),
-                  fmpz_mpoly_get_coeff_fmpz_ref(znum, nmax_i, ctx->zctx));
-      max_digits = fmpz_sizeinbase(t, 10);
-    } else
-    {
-      fmpz_mul(t, fmpq_numref(x->den->content),
-                  fmpz_mpoly_get_coeff_fmpz_ref(zden, dmax_i, ctx->zctx));
+                  fmpq_mpoly_zpoly_term_coeff_ref(znum, nmax_i, ctx));
       max_digits = fmpz_sizeinbase(t, 10);
     }
-    s = (char*) omAlloc(max_digits + 2);
+    else
+    {
+      fmpz_mul(t, fmpq_numref(x->den->content),
+                  fmpq_mpoly_zpoly_term_coeff_ref(zden, dmax_i, ctx));
+      max_digits =fmpz_sizeinbase(t, 10);
+    }
+    char *s = (char*) omAlloc(max_digits + 2);
     if (!num_is_const)
       StringAppendS("(");
     if (fmpq_mpoly_is_one(x->num, ctx))
@@ -627,16 +651,26 @@ static void WriteLong(number a, const coeffs c)
       for (i = 0; i < fmpq_mpoly_length(x->num, ctx); i++)
       {
         need_times = TRUE;
-        fmpz_mul(t, fmpz_mpoly_get_coeff_fmpz_ref(znum, i, ctx->zctx),
+        fmpz_mul(t, fmpq_mpoly_zpoly_term_coeff_ref(znum, i, ctx),
                                        fmpq_numref(x->num->content));
         if (i != 0 && fmpz_sgn(t) > 0)
           StringAppendS("+");
+        BOOLEAN need_1=FALSE;
         if (!fmpz_is_one(t))
         {
           fmpz_get_str(s, 10, t);
-          StringAppendS(s);
-        } else
+          if (strcmp(s,"-1")==0)
+          {
+            StringAppendS("-");
+            need_1 = TRUE;
+            need_times = FALSE;
+          }
+          else
+            StringAppendS(s);
+        }
+        else
         {
+          need_1 = TRUE;
           need_times = FALSE;
         }
         for (j = 0; j < nvars; j++)
@@ -644,6 +678,7 @@ static void WriteLong(number a, const coeffs c)
           k = fmpq_mpoly_get_term_var_exp_ui(x->num, i, j, ctx);
           if (k != 0)
           {
+            need_1 = FALSE;
             if (need_times)
               StringAppendS("*");
             if (k != 1)
@@ -653,33 +688,47 @@ static void WriteLong(number a, const coeffs c)
             need_times = TRUE;
           }
         }
+        if (need_1)  StringAppendS("1");
       }
     }
     if (!num_is_const)
        StringAppendS(")");
     if (!fmpq_mpoly_is_one(x->den, ctx))
     {
+      BOOLEAN closing_paren=FALSE;
       StringAppendS("/");
       if (!den_is_const)
+      {
         StringAppendS("(");
+        closing_paren = TRUE;
+      }
       for (i = 0; i < fmpq_mpoly_length(x->den, ctx); i++)
       {
         need_times = TRUE;
-        fmpz_mul(t, fmpz_mpoly_get_coeff_fmpz_ref(zden, i, ctx->zctx),
+        fmpz_mul(t, fmpq_mpoly_zpoly_term_coeff_ref(zden, i, ctx),
                                        fmpq_numref(x->den->content));
-        if (i != 0 && fmpz_sgn(t) > 0)
+        if (i == 0)
+        {
+          if ((fmpz_sgn(t) < 0) && den_is_const)
+          {
+            StringAppendS("(");
+            closing_paren = TRUE;
+          }
+        }
+        else if (fmpz_sgn(t) > 0)
           StringAppendS("+");
         if (!fmpz_is_one(t))
         {
           fmpz_get_str(s, 10, t);
           StringAppendS(s);
-        } else
+        }
+        else
         {
           need_times = FALSE;
         }
         for (j = 0; j < nvars; j++)
         {
-          k = fmpq_mpoly_get_term_var_exp_ui(x->num, i, j, ctx);
+          k = fmpq_mpoly_get_term_var_exp_ui(x->den, i, j, ctx);
           if (k != 0)
           {
             if (need_times)
@@ -692,10 +741,11 @@ static void WriteLong(number a, const coeffs c)
           }
         }
       }
-      if (!den_is_const)
+      if (closing_paren)
         StringAppendS(")");
     }
     fmpz_clear(t);
+    omFree(s);
   }
 }
 
@@ -713,38 +763,38 @@ static void WriteShort(number a, const coeffs c)
   {
     BOOLEAN num_is_const = fmpq_mpoly_is_fmpq(x->num, ctx);
     BOOLEAN den_is_const = fmpq_mpoly_is_fmpq(x->den, ctx);
-    fmpz_mpoly_struct * znum = x->num->zpoly;
-    fmpz_mpoly_struct * zden = x->den->zpoly;
+    fmpq_mpoly_struct * znum = x->num;
+    fmpq_mpoly_struct * zden = x->den;
     slong nvars = fmpq_mpoly_ctx_nvars(ctx);
     fmpz_init(t);
     nmax_i = 0;
     dmax_i = 0;
-    for (i = 1; i < fmpz_mpoly_length(znum, ctx->zctx); i++)
+    for (i = 1; i < fmpq_mpoly_length(znum, ctx); i++)
     {
-      if (fmpz_cmpabs(fmpz_mpoly_get_coeff_fmpz_ref(znum, i, ctx->zctx),
-                      fmpz_mpoly_get_coeff_fmpz_ref(znum, nmax_i, ctx->zctx)) > 0)
+      if (fmpz_cmpabs(fmpq_mpoly_zpoly_term_coeff_ref(znum, i, ctx),
+                      fmpq_mpoly_zpoly_term_coeff_ref(znum, nmax_i, ctx)) > 0)
       {
          nmax_i = i;
       }
     }
-    for (i = 1; i < fmpz_mpoly_length(zden, ctx->zctx); i++)
+    for (i = 1; i < fmpq_mpoly_length(zden, ctx); i++)
     {
-      if (fmpz_cmpabs(fmpz_mpoly_get_coeff_fmpz_ref(zden, i, ctx->zctx),
-                      fmpz_mpoly_get_coeff_fmpz_ref(zden, dmax_i, ctx->zctx)) > 0)
+      if (fmpz_cmpabs(fmpq_mpoly_zpoly_term_coeff_ref(zden, i, ctx),
+                      fmpq_mpoly_zpoly_term_coeff_ref(zden, dmax_i, ctx)) > 0)
       {
         dmax_i = i;
       }
     }
-    if (fmpz_cmpabs(fmpz_mpoly_get_coeff_fmpz_ref(znum, nmax_i, ctx->zctx),
-                       fmpz_mpoly_get_coeff_fmpz_ref(zden, dmax_i, ctx->zctx)) > 0)
+    if (fmpz_cmpabs(fmpq_mpoly_zpoly_term_coeff_ref(znum, nmax_i, ctx),
+                       fmpq_mpoly_zpoly_term_coeff_ref(zden, dmax_i, ctx)) > 0)
     {
       fmpz_mul(t, fmpq_numref(x->num->content),
-                  fmpz_mpoly_get_coeff_fmpz_ref(znum, nmax_i, ctx->zctx));
+                  fmpq_mpoly_zpoly_term_coeff_ref(znum, nmax_i, ctx));
       max_digits = fmpz_sizeinbase(t, 10);
     } else
     {
       fmpz_mul(t, fmpq_numref(x->den->content),
-                  fmpz_mpoly_get_coeff_fmpz_ref(zden, dmax_i, ctx->zctx));
+                  fmpq_mpoly_zpoly_term_coeff_ref(zden, dmax_i, ctx));
       max_digits = fmpz_sizeinbase(t, 10);
     }
     s = (char*) omAlloc(max_digits + 2);
@@ -756,7 +806,7 @@ static void WriteShort(number a, const coeffs c)
     {
       for (i = 0; i < fmpq_mpoly_length(x->num, ctx); i++)
       {
-        fmpz_mul(t, fmpz_mpoly_get_coeff_fmpz_ref(znum, i, ctx->zctx),
+        fmpz_mul(t, fmpq_mpoly_zpoly_term_coeff_ref(znum, i, ctx),
                                        fmpq_numref(x->num->content));
         if (i != 0 && fmpz_sgn(t) > 0)
           StringAppendS("+");
@@ -787,7 +837,7 @@ static void WriteShort(number a, const coeffs c)
         StringAppendS("(");
       for (i = 0; i < fmpq_mpoly_length(x->den, ctx); i++)
       {
-        fmpz_mul(t, fmpz_mpoly_get_coeff_fmpz_ref(zden, i, ctx->zctx),
+        fmpz_mul(t, fmpq_mpoly_zpoly_term_coeff_ref(zden, i, ctx),
                                        fmpq_numref(x->den->content));
         if (i != 0 && fmpz_sgn(t) > 0)
           StringAppendS("+");
@@ -837,7 +887,7 @@ static const char* Read(const char * st, number * a, const coeffs c)
     fmpz_init(z);
     s = nlEatLong((char *) s, z);
     fmpq_mpoly_set_fmpz(((fmpq_rat_ptr)(*a))->num, z, ctx);
-    fmpq_mpoly_set_ui(((fmpq_rat_ptr)(*a))->den, 1, ctx);
+    fmpq_mpoly_one(((fmpq_rat_ptr)(*a))->den, ctx);
     if (*s == '/')
     {
       s++;
@@ -849,11 +899,13 @@ static const char* Read(const char * st, number * a, const coeffs c)
   }
   else
   {
+    BOOLEAN found=FALSE;
     for (j = 0; j < nvars; j++)
     {
       if (strncmp(s, c->pParameterNames[j],
                                   strlen(c->pParameterNames[j])) == 0)
       {
+        found=TRUE;
         fmpq_mpoly_gen(((fmpq_rat_ptr)(*a))->num, j, ctx);
         s += strlen(c->pParameterNames[j]);
         if (isdigit(*s))
@@ -868,13 +920,15 @@ static const char* Read(const char * st, number * a, const coeffs c)
         }
       }
     }
+    if (!found) fmpq_mpoly_one(((fmpq_rat_ptr)(*a))->num, ctx);
+    fmpq_mpoly_one(((fmpq_rat_ptr)(*a))->den, ctx);
   }
   if (neg)
     fmpq_mpoly_neg(((fmpq_rat_ptr)(*a))->num, ((fmpq_rat_ptr)(*a))->num, ctx);
   return s;
 }
 
-static void Normalize(number &a, const coeffs c)
+static void Normalize(number &, const coeffs)
 {
   /* everything already normalized */
 }
@@ -884,8 +938,24 @@ static BOOLEAN Greater(number a, number b, const coeffs c)
   return Size(a, c) > Size(b, c);
 }
 
+static void Delete(number * a, const coeffs c)
+{
+  if ((*a) != NULL)
+  {
+    const fmpq_rat_ptr x = (fmpq_rat_ptr) *a;
+    fmpq_rat_clear(x, c);
+    omFree(*a);
+    *a = NULL;
+  }
+}
+
 static BOOLEAN Equal(number a, number b, const coeffs c)
 {
+  number diff=Sub(a,b,c);
+  BOOLEAN equal=IsZero(diff,c);
+  Delete(&diff,c);
+  return equal;
+  /*
   fmpz_t t1, t2;
   int eq;
   const fmpq_rat_ptr x = (fmpq_rat_ptr) a;
@@ -907,10 +977,12 @@ static BOOLEAN Equal(number a, number b, const coeffs c)
   fmpz_clear(t1);
   fmpz_clear(t2);
   return eq;
+  */
 }
 
 static BOOLEAN IsMOne(number a, const coeffs c)
 {
+  if (a==NULL) return FALSE;
   int eq;
   fmpq_t content;
   const fmpq_rat_ptr x = (fmpq_rat_ptr) a;
@@ -926,14 +998,15 @@ static BOOLEAN IsMOne(number a, const coeffs c)
   return eq;
 }
 
-static BOOLEAN GreaterZero(number k, const coeffs c)
+static BOOLEAN GreaterZero(number, const coeffs)
 {
   return TRUE; /* everything in parens for now so need + sign */
 }
 
 static void Power(number a, int i, number * result, const coeffs c)
 {
-  fmpq_rat_init((fmpq_rat_ptr) result, c);
+  *result= (number) omAlloc(sizeof(fmpq_rat_struct));
+  fmpq_rat_init((fmpq_rat_ptr) (*result), c);
   const fmpq_rat_ptr x = (fmpq_rat_ptr) a;
   const fmpq_ctx_ptr ctx = (fmpq_ctx_ptr) ((data_ptr)c->data)->ctx;
   fmpq_mpoly_pow_ui(((fmpq_rat_ptr)(*result))->num, x->num, (slong) i, ctx);
@@ -962,17 +1035,6 @@ static number GetNumerator(number &n, const coeffs c)
   return (number) res;
 }
 
-static number Gcd(number a, number b, const coeffs c)
-{
-  const fmpq_rat_ptr x = (fmpq_rat_ptr) a;
-  const fmpq_rat_ptr y = (fmpq_rat_ptr) b;
-  const fmpq_ctx_ptr ctx = (fmpq_ctx_ptr) ((data_ptr)c->data)->ctx;
-  fmpq_rat_ptr res = (fmpq_rat_ptr) omAlloc(sizeof(fmpq_rat_struct));
-  fmpq_rat_init(res, c);
-  fmpq_mpoly_one(res->den, ctx);
-  return (number) res;
-}
-
 static number ExtGcd(number a, number b, number *s, number *t, const coeffs c)
 {
   WerrorS("not a Euclidean ring: ExtGcd");
@@ -985,20 +1047,29 @@ static number Lcm(number a, number b, const coeffs c)
   return NULL;
 }
 
-static void Delete(number * a, const coeffs c)
+static number Q2Frac(number a, const coeffs src, const coeffs dst)
 {
-  if ((*a) != NULL)
+  if (SR_HDL(a) & SR_INT)
+    return Init(SR_TO_INT(a),dst);
+  else if (a->s==3)
+    return InitMPZ(a->z,dst);
+  else
   {
-    const fmpq_rat_ptr x = (fmpq_rat_ptr) *a;
-    fmpq_rat_clear(x, c);
-    omFree(*a);
-    *a = NULL;
+    number z=InitMPZ(a->z,dst);
+    number n=InitMPZ(a->n,dst);
+    number res=Div(z,n,dst);
+    Delete(&z,dst);
+    Delete(&n,dst);
+    return res;
   }
 }
 
 static nMapFunc SetMap(const coeffs src, const coeffs dst)
 {
-  WerrorS("not yet: SetMap");
+  if (src == dst) return ndCopyMap;
+  if (nCoeff_is_Q_or_BI(src))  /*Q, coeffs_BIGINT */
+    return Q2Frac;
+
   return NULL;
 }
 
@@ -1010,6 +1081,7 @@ static nMapFunc SetMap(const coeffs src, const coeffs dst)
 //{
 //}
 
+#if 0
 static number Init_bigint(number i, const coeffs dummy, const coeffs dst)
 {
   const fmpq_ctx_ptr ctx = (fmpq_ctx_ptr) ((data_ptr)(dst->data))->ctx;
@@ -1030,19 +1102,24 @@ static number Init_bigint(number i, const coeffs dummy, const coeffs dst)
   fmpq_mpoly_set_si(res->den, 1, ctx);
   return (number) res;
 }
+#endif
 
+#if 0
 static number Farey(number p, number n, const coeffs c)
 {
   WerrorS("not yet: Farey");
   return NULL;
 }
+#endif
 
+#if 0
 static number ChineseRemainder(number *x, number *q, int rl,
                     BOOLEAN sym, CFArray &inv_cache, const coeffs c)
 {
   WerrorS("not yet: ChineseRemainder");
   return NULL;
 }
+#endif
 
 static int ParDeg(number a, const coeffs c)
 {
@@ -1062,6 +1139,7 @@ static number Parameter(const int i, const coeffs c)
   return (number) res;
 }
 
+#if 0
 static void WriteFd(number a, const ssiInfo *d, const coeffs c)
 {
   // format: len a_len(num den) .. a_0
@@ -1090,7 +1168,9 @@ static void WriteFd(number a, const ssiInfo *d, const coeffs c)
   mpq_clear(m);
 */
 }
+#endif
 
+#if 0
 static number ReadFd(const ssiInfo *d, const coeffs c)
 {
   // format: len a_len .. a_0
@@ -1116,22 +1196,27 @@ static number ReadFd(const ssiInfo *d, const coeffs c)
 */
   return NULL;
 }
+#endif
 
 // cfClearContent
 
 // cfClearDenominators
 
+#if 0
 static number ConvFactoryNSingN(const CanonicalForm n, const coeffs c)
 {
   WerrorS("not yet: ConvFactoryNSingN");
   return NULL;
 }
+#endif
 
+#if 0
 static CanonicalForm ConvSingNFactoryN(number n, BOOLEAN setChar, const coeffs c)
 {
   WerrorS("not yet: ConvSingNFactoryN");
   return CanonicalForm(0);
 }
+#endif
 
 char * QratCoeffName(const coeffs c)
 {
@@ -1152,7 +1237,7 @@ static char* CoeffString(const coeffs c)
   return omStrDup(QratCoeffName(c));
 }
 
-static void CoeffWrite(const coeffs c, BOOLEAN details)
+static void CoeffWrite(const coeffs c, BOOLEAN)
 {
   PrintS(QratCoeffName(c));
 }
@@ -1205,8 +1290,18 @@ coeffs flintQratInitCfByName(char *s, n_coeffType n)
 }
 
 #ifdef LDEBUG
-static BOOLEAN DBTest(number a, const char *f, const int l, const coeffs c)
+static BOOLEAN DBTest(number c, const char *, const int, const coeffs cf)
 {
+  const fmpq_rat_ptr x = (fmpq_rat_ptr) c;
+  if ((x!=NULL)
+  && ((x->num==NULL)||(x->den==NULL)))
+  {
+    PrintS("NULL nun or den.\n");
+    return FALSE;
+  }
+  const fmpq_ctx_ptr ctx = (fmpq_ctx_ptr) ((data_ptr)cf->data)->ctx;
+  fmpq_mpoly_assert_canonical(x->num,ctx);
+  fmpq_mpoly_assert_canonical(x->den,ctx);
   return TRUE;
 }
 
@@ -1225,7 +1320,6 @@ BOOLEAN flintQrat_InitChar(coeffs cf, void * infoStruct)
   cf->cfCoeffWrite   = CoeffWrite;
   cf->nCoeffIsEqual  = CoeffIsEqual;
   cf->cfKillChar     = KillChar;
-  cf->cfSetChar      = nSetChar;              /* Something wrong here ?? */
   cf->ch             = 0; //char 0
   cf->cfMult         = Mult;
   cf->cfSub          = Sub;
@@ -1243,7 +1337,7 @@ BOOLEAN flintQrat_InitChar(coeffs cf, void * infoStruct)
   cf->cfRePart       = Copy;
   // default: cf->cfImPart       = ndReturn0;
   cf->cfWriteLong    = WriteLong;
-  cf->cfWriteShort   = WriteShort;
+  cf->cfWriteShort   = WriteLong;
   cf->cfRead         = Read;
   cf->cfNormalize    = Normalize;
 
@@ -1262,23 +1356,22 @@ BOOLEAN flintQrat_InitChar(coeffs cf, void * infoStruct)
   cf->cfPower        = Power;
   cf->cfGetDenom     = GetDenom;
   cf->cfGetNumerator = GetNumerator;
-  cf->cfGcd          = Gcd;
   cf->cfExtGcd       = ExtGcd;
   cf->cfLcm          = Lcm;
   cf->cfDelete       = Delete;
   cf->cfSetMap       = SetMap;
   // default: cf->cfInpMult
   // default: cf->cfInpAdd
-  cf->cfFarey        =Farey;
-  cf->cfChineseRemainder = ChineseRemainder;
+  //cf->cfFarey        =Farey;
+  //cf->cfChineseRemainder = ChineseRemainder;
   cf->cfParDeg       = ParDeg;
   cf->cfParameter    = Parameter;
   //  cf->cfClearContent = ClearContent;
   //  cf->cfClearDenominators = ClearDenominators;
   //cf->convFactoryNSingN = ConvFactoryNSingN;
   //cf->convSingNFactoryN = ConvSingNFactoryN;
-  cf->cfWriteFd      = WriteFd;
-  cf->cfReadFd       = ReadFd;
+  //cf->cfWriteFd      = WriteFd;
+  //cf->cfReadFd       = ReadFd;
 #ifdef LDEBUG
   cf->cfDBTest       = DBTest;
 #endif
@@ -1294,6 +1387,10 @@ BOOLEAN flintQrat_InitChar(coeffs cf, void * infoStruct)
   cf->has_simple_Alloc = FALSE;
   cf->is_field = TRUE;
 
+  fmpq_rat_data_struct *ps=(fmpq_rat_data_struct*)omAlloc(sizeof(fmpq_rat_data_struct));
+  ps->ctx=(fmpq_mpoly_ctx_struct*)omAlloc(sizeof(fmpq_mpoly_ctx_struct));
+  fmpq_mpoly_ctx_init(ps->ctx,pp->N,ORD_LEX);
+  cf->data=ps;
   return FALSE;
 }
 #endif

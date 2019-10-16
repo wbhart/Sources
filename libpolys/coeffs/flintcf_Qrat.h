@@ -11,6 +11,9 @@
 
 #include "misc/auxiliary.h"
 #ifdef HAVE_FLINT
+#include <flint/flint.h>
+#include <flint/fmpq_mpoly.h>
+
 
 typedef struct
 {
