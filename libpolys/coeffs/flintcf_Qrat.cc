@@ -951,33 +951,35 @@ static void Delete(number * a, const coeffs c)
 
 static BOOLEAN Equal(number a, number b, const coeffs c)
 {
-  number diff=Sub(a,b,c);
-  BOOLEAN equal=IsZero(diff,c);
-  Delete(&diff,c);
-  return equal;
-  /*
   fmpz_t t1, t2;
   int eq;
   const fmpq_rat_ptr x = (fmpq_rat_ptr) a;
   const fmpq_rat_ptr y = (fmpq_rat_ptr) b;
   const fmpq_ctx_ptr ctx = (fmpq_ctx_ptr) ((data_ptr)c->data)->ctx;
+  fmpq_mpoly_assert_canonical(x->num,ctx);
+  fmpq_mpoly_assert_canonical(x->den,ctx);
+  fmpq_mpoly_assert_canonical(y->num,ctx);
+  fmpq_mpoly_assert_canonical(y->den,ctx);
   if (!fmpz_mpoly_equal(x->num->zpoly, y->num->zpoly, ctx->zctx))
+  {
     return FALSE;
+  }
   if (!fmpz_mpoly_equal(x->den->zpoly, y->den->zpoly, ctx->zctx))
+  {  
     return FALSE;
+  }
   fmpz_init(t1);
   fmpz_init(t2);
-  fmpz_mul(t1, fmpq_numref(x->num->content), fmpq_numref(x->den->content));
+  fmpz_mul(t1, fmpq_numref(x->num->content), fmpq_denref(x->den->content));
   fmpz_mul(t1, t1, fmpq_denref(y->num->content));
-  fmpz_mul(t1, t1, fmpq_denref(y->den->content));
-  fmpz_mul(t2, fmpq_numref(y->num->content), fmpq_numref(y->den->content));
+  fmpz_mul(t1, t1, fmpq_numref(y->den->content));
+  fmpz_mul(t2, fmpq_numref(y->num->content), fmpq_denref(y->den->content));
   fmpz_mul(t2, t2, fmpq_denref(x->num->content));
-  fmpz_mul(t2, t2, fmpq_denref(x->den->content));
+  fmpz_mul(t2, t2, fmpq_numref(x->den->content));
   eq = fmpz_equal(t1, t2);
   fmpz_clear(t1);
   fmpz_clear(t2);
   return eq;
-  */
 }
 
 static BOOLEAN IsMOne(number a, const coeffs c)
