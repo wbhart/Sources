@@ -45,7 +45,8 @@ enum n_coeffType
   n_Zn, /**< only used if HAVE_RINGS is defined */
   n_Znm, /**< only used if HAVE_RINGS is defined */
   n_Z2m, /**< only used if HAVE_RINGS is defined */
-  n_CF /**< ? */
+  n_FlintQrat, /**< rational funtion field over Q */
+  n_CF
 };
 
 extern const unsigned short fftable[];

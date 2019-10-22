@@ -1222,7 +1222,7 @@ static BOOLEAN ii_pAE_init(leftv res,leftv a)
 #ifdef HAVE_FLINT
 STATIC_VAR n_coeffType n_FlintZn=n_unknown;
 STATIC_VAR n_coeffType n_FlintQ=n_unknown;
-STATIC_VAR n_coeffType n_FlintQrat=n_unknown;
+//STATIC_VAR n_coeffType n_FlintQrat=n_unknown;
 static BOOLEAN ii_FlintZn_init(leftv res,leftv a)
 {
   const short t[]={2,INT_CMD,STRING_CMD};
@@ -1258,6 +1258,10 @@ static BOOLEAN ii_FlintQrat_init(leftv res,leftv a)
     return TRUE;
   }
   QaInfo par;
+  #ifdef QA_DEBUG
+  par.C=r->cf;
+  a=a->next;
+  #endif
   par.N=a->listLength();
   par.names=(char**)omAlloc(par.N*sizeof(char*));
   int i=0;
@@ -1465,8 +1469,8 @@ void siInit(char *name)
       iiAddCproc("kernel","flintQp",FALSE,ii_FlintQ_init);
       nRegisterCfByName(flintQInitCfByName,n_FlintQ);
     }
-    n_FlintQrat=nRegister(n_unknown,flintQrat_InitChar);
-    if (n_FlintQrat!=n_unknown)
+    //n_FlintQrat=nRegister(n_unknown,flintQrat_InitChar);
+    //if (n_FlintQrat!=n_unknown)
     {
       iiAddCproc("kernel","flintQ",FALSE,ii_FlintQrat_init);
       nRegisterCfByName(flintQInitCfByName,n_FlintQ);
