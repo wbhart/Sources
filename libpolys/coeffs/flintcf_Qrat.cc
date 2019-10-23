@@ -590,8 +590,13 @@ static int Size(number n, const coeffs c)
   const fmpq_ctx_ptr ctx = (fmpq_ctx_ptr) ((data_ptr)c->data)->ctx;
   if (fmpq_mpoly_is_zero(x->num, ctx))
     return 0;
-  return fmpq_mpoly_length(x->num, ctx) +
-         fmpq_mpoly_length(x->den, ctx);
+  unsigned long len=fmpq_mpoly_length(x->num, ctx) +
+         fmpq_mpoly_length(x->den, ctx)-fmpq_mpoly_is_one(x->den, ctx);
+  unsigned long numDegree=fmpq_mpoly_total_degree_si(x->num, ctx);
+  unsigned long denDegree=fmpq_mpoly_total_degree_si(x->den, ctx);
+  unsigned long t= ((numDegree + denDegree)*(numDegree + denDegree) + 1) * len;
+  if (t>INT_MAX) return INT_MAX;
+  else return (int)t;
 }
 
 static long Int(number &n, const coeffs c)
