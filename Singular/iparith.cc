@@ -1022,7 +1022,6 @@ static BOOLEAN jjTIMES_P(leftv res, leftv u, leftv v)
           pTotaldegree(a),pTotaldegree(b),currRing->bitmask/2);
       }
       res->data = (char *)(pp_Mult_qq( a, b, currRing));
-      pNormalize((poly)res->data);
       return FALSE;
     }
     // u->next exists: copy v
@@ -1035,7 +1034,6 @@ static BOOLEAN jjTIMES_P(leftv res, leftv u, leftv v)
           pTotaldegree(a),pTotaldegree(b),currRing->bitmask/2);
     }
     res->data = (char *)(pMult( a, b));
-    pNormalize((poly)res->data);
     return jjOP_REST(res,u,v);
   }
   // v->next exists: copy u
@@ -1050,13 +1048,11 @@ static BOOLEAN jjTIMES_P(leftv res, leftv u, leftv v)
     return TRUE;
   }
   res->data = (char *)(pMult( a, b));
-  pNormalize((poly)res->data);
   return jjOP_REST(res,u,v);
 }
 static BOOLEAN jjTIMES_ID(leftv res, leftv u, leftv v)
 {
   res->data = (char *)idMult((ideal)u->Data(),(ideal)v->Data());
-  id_Normalize((ideal)res->data,currRing);
   if ((v->next!=NULL) || (u->next!=NULL))
     return jjOP_REST(res,u,v);
   return FALSE;
@@ -1105,7 +1101,6 @@ static BOOLEAN jjTIMES_MA_P1(leftv res, leftv u, leftv v)
   int r=pMaxComp(p);/* recompute the rank for the case ideal*vector*/
   ideal I= (ideal)mp_MultP((matrix)u->CopyD(MATRIX_CMD),p,currRing);
   if (r>0) I->rank=r;
-  id_Normalize(I,currRing);
   res->data = (char *)I;
   return FALSE;
 }
@@ -1115,7 +1110,6 @@ static BOOLEAN jjTIMES_MA_P2(leftv res, leftv u, leftv v)
   int r=pMaxComp(p);/* recompute the rank for the case ideal*vector*/
   ideal I= (ideal)pMultMp(p,(matrix)v->CopyD(MATRIX_CMD),currRing);
   if (r>0) I->rank=r;
-  id_Normalize(I,currRing);
   res->data = (char *)I;
   return FALSE;
 }
@@ -1124,7 +1118,6 @@ static BOOLEAN jjTIMES_MA_N1(leftv res, leftv u, leftv v)
   number n=(number)v->CopyD(NUMBER_CMD);
   poly p=pNSet(n);
   res->data = (char *)mp_MultP((matrix)u->CopyD(MATRIX_CMD),p,currRing);
-  id_Normalize((ideal)res->data,currRing);
   return FALSE;
 }
 static BOOLEAN jjTIMES_MA_N2(leftv res, leftv u, leftv v)
@@ -1134,7 +1127,6 @@ static BOOLEAN jjTIMES_MA_N2(leftv res, leftv u, leftv v)
 static BOOLEAN jjTIMES_MA_I1(leftv res, leftv u, leftv v)
 {
   res->data = (char *)mp_MultI((matrix)u->CopyD(MATRIX_CMD),(int)(long)v->Data(),currRing);
-  id_Normalize((ideal)res->data,currRing);
   return FALSE;
 }
 static BOOLEAN jjTIMES_MA_I2(leftv res, leftv u, leftv v)
@@ -1151,7 +1143,6 @@ static BOOLEAN jjTIMES_MA(leftv res, leftv u, leftv v)
              MATROWS(A),MATCOLS(A),MATROWS(B),MATCOLS(B));
      return TRUE;
   }
-  id_Normalize((ideal)res->data,currRing);
   if ((v->next!=NULL) || (u->next!=NULL))
     return jjOP_REST(res,u,v);
   return FALSE;
@@ -1166,7 +1157,6 @@ static BOOLEAN jjTIMES_SM(leftv res, leftv u, leftv v)
              (int)A->rank,IDELEMS(A),(int)B->rank,IDELEMS(B));
      return TRUE;
   }
-  id_Normalize((ideal)res->data,currRing);
   if ((v->next!=NULL) || (u->next!=NULL))
     return jjOP_REST(res,u,v);
   return FALSE;
@@ -1316,7 +1306,6 @@ static BOOLEAN jjDIV_Ma(leftv res, leftv u, leftv v)
         MATELEM(mm,i,j) = pp_DivideM(MATELEM(m,i,j),q,currRing);
     }
   }
-  id_Normalize((ideal)mm,currRing);
   res->data=(char *)mm;
   return FALSE;
 }
@@ -1560,18 +1549,18 @@ static BOOLEAN jjKLAMMER_rest(leftv res, leftv u, leftv v);
 static BOOLEAN jjKLAMMER(leftv res, leftv u, leftv v)
 {
   if(u->name==NULL) return TRUE;
-  char * nn = (char *)omAlloc(strlen(u->name) + 14);
+  long slen = strlen(u->name) + 14;
+  char *nn = (char*) omAlloc(slen);
   sprintf(nn,"%s(%d)",u->name,(int)(long)v->Data());
-  omFree((ADDRESS)u->name);
-  u->name=NULL;
   char *n=omStrDup(nn);
-  omFree((ADDRESS)nn);
+  omFreeSize((ADDRESS)nn,slen);
   syMake(res,n);
   if (u->next!=NULL) return jjKLAMMER_rest(res,u->next,v);
   return FALSE;
 }
 static BOOLEAN jjKLAMMER_IV(leftv res, leftv u, leftv v)
 {
+  if(u->name==NULL) return TRUE;
   intvec * iv=(intvec *)v->Data();
   leftv p=NULL;
   int i;
@@ -1592,8 +1581,6 @@ static BOOLEAN jjKLAMMER_IV(leftv res, leftv u, leftv v)
     sprintf(n,"%s(%d)",u->name,(*iv)[i]);
     syMake(p,omStrDup(n));
   }
-  omFree((ADDRESS)u->name);
-  u->name = NULL;
   omFreeSize(n, slen);
   if (u->next!=NULL) return jjKLAMMER_rest(res,u->next,v);
   return FALSE;
@@ -3973,20 +3960,20 @@ static BOOLEAN jjDEFINED(leftv res, leftv v)
 }
 
 /// Return the denominator of the input number
-/// NOTE: the input number is normalized as a side effect
 static BOOLEAN jjDENOMINATOR(leftv res, leftv v)
 {
-  number n = reinterpret_cast<number>(v->Data());
+  number n = reinterpret_cast<number>(v->CopyD());
   res->data = reinterpret_cast<void*>(n_GetDenom(n, currRing->cf));
+  n_Delete(&n,currRing);
   return FALSE;
 }
 
 /// Return the numerator of the input number
-/// NOTE: the input number is normalized as a side effect
 static BOOLEAN jjNUMERATOR(leftv res, leftv v)
 {
-  number n = reinterpret_cast<number>(v->Data());
+  number n = reinterpret_cast<number>(v->CopyD());
   res->data = reinterpret_cast<void*>(n_GetNumerator(n, currRing->cf));
+  n_Delete(&n,currRing);
   return FALSE;
 }
 
@@ -4528,6 +4515,7 @@ static BOOLEAN jjLEADCOEF(leftv res, leftv v)
   }
   else
   {
+    nNormalize(pGetCoeff(p));
     res->data=(char *)nCopy(pGetCoeff(p));
   }
   return FALSE;
